@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: smart-emergency-response
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/emergency_response?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: DB_USERNAME:
+    password: DB_PASSWORD:
+    hikari:
+      connection-test-query: SELECT 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      minimum-idle: 2
+      maximum-pool-size: 10
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
+    baseline-version: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.jdbc.batch_size: 25
+      hibernate.order_inserts: true
+  mvc:
+    problemdetails:
+      enabled: true
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:em}
+    password: ${MAIL_PASSWORD:}
+app:
+  public-url: ${APP_PUBLIC_URL:http://localhost:8080}
+  document-storage: ${DOCUMENT_STORAGE:uploads}
+  demo-mode: ${APP_DEMO_MODE:true}
+  # Local-only fallback so the Eclipse project starts without extra launch configuration.
+  # Set APP_DATA_ENCRYPTION_KEY to a unique secret before deployment.
+  data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:local-development-key-change-me}
+server:
+  error:
+    include-message: never
+  tomcat:
+    threads:
+      max: 200
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true

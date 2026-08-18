@@ -1,0 +1,7 @@
+package com.smartresponse.service;
+import com.smartresponse.api.*; import com.smartresponse.domain.*; import com.smartresponse.repository.*; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.util.*;
+@Service public class ResponderService {
+ private final ResponderProfileRepository profiles; private final UserRepository users; public ResponderService(ResponderProfileRepository p,UserRepository u){profiles=p;users=u;}
+ @Transactional public ResponderStatusResponse update(String email,ResponderStatusRequest r){AppUser u=users.findByEmailIgnoreCase(email).orElseThrow();if("AVAILABLE".equals(r.availabilityStatus())&&(r.latitude()==null||r.longitude()==null))throw new IllegalArgumentException("Location is required when available");ResponderProfile p=profiles.findByUserId(u.getId()).orElseThrow(()->new SecurityException("Your responder role has not been approved"));p.update(r.availabilityStatus(),r.latitude(),r.longitude());return new ResponderStatusResponse(p.getVerificationStatus(),p.getAvailabilityStatus(),p.getServiceType(),p.getLatitude(),p.getLongitude());}
+ @Transactional(readOnly=true) public ResponderStatusResponse mine(String email){ResponderProfile p=profiles.findByUserId(users.findByEmailIgnoreCase(email).orElseThrow().getId()).orElseThrow(()->new NoSuchElementException("Responder profile not available"));return new ResponderStatusResponse(p.getVerificationStatus(),p.getAvailabilityStatus(),p.getServiceType(),p.getLatitude(),p.getLongitude());}
+}

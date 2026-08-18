@@ -1,0 +1,3 @@
+CREATE TABLE app_users (id BINARY(16) NOT NULL, email VARCHAR(254) NOT NULL, full_name VARCHAR(100) NOT NULL, password_hash VARCHAR(100) NOT NULL, enabled BIT NOT NULL, created_at TIMESTAMP(6) NOT NULL, PRIMARY KEY(id), UNIQUE KEY idx_user_email(email));
+CREATE TABLE user_roles (user_id BINARY(16) NOT NULL, role VARCHAR(32) NOT NULL, PRIMARY KEY(user_id,role), CONSTRAINT fk_user_roles_user FOREIGN KEY(user_id) REFERENCES app_users(id));
+CREATE TABLE password_reset_tokens (id BINARY(16) NOT NULL, user_id BINARY(16) NOT NULL, token_hash VARCHAR(64) NOT NULL, expires_at TIMESTAMP(6) NOT NULL, used_at TIMESTAMP(6) NULL, PRIMARY KEY(id), UNIQUE KEY idx_reset_token(token_hash), CONSTRAINT fk_reset_user FOREIGN KEY(user_id) REFERENCES app_users(id));

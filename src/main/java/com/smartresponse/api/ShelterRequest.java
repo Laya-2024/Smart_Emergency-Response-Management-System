@@ -1,0 +1,1 @@
+package com.smartresponse.api; import jakarta.validation.constraints.*; public record ShelterRequest(@NotBlank @Size(max=150) String name,@NotBlank @Size(max=500) String addressLine,@DecimalMin("-90.0") @DecimalMax("90.0") double latitude,@DecimalMin("-180.0") @DecimalMax("180.0") double longitude,@Min(1) int capacityTotal){}

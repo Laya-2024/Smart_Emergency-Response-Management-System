@@ -1,0 +1,1 @@
+document.querySelector('#contrast')?.addEventListener('click',()=>document.body.classList.toggle('high-contrast'));document.querySelector('#text-size')?.addEventListener('click',()=>document.documentElement.classList.toggle('large-text'));

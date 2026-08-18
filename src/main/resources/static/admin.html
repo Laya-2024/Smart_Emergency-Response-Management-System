@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>Admin — SafeLink</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f4f7fb;color:#10233e;display:flex;min-height:100vh}
+/* SIDEBAR */
+.sidebar{width:240px;min-height:100vh;background:#10233e;display:flex;flex-direction:column;padding:24px 12px;position:sticky;top:0}
+.sidebar-brand{color:#fff;font-weight:800;font-size:1.2rem;text-decoration:none;padding:0 10px 24px;display:block}
+.sidebar-brand span{display:block;color:#94a3b8;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+.nav-item{border:0;background:transparent;color:#b7c2d2;text-align:left;border-radius:8px;padding:10px 12px;font:600 .85rem system-ui;cursor:pointer;width:100%;display:block;text-decoration:none}
+.nav-item:hover,.nav-item.active{background:#1e3a5f;color:#fff}
+.sidebar-footer{margin-top:auto;border-top:1px solid #294561;padding:14px 10px 0;color:#94a3b8;font-size:.75rem}
+.sidebar-footer button{display:block;margin-top:8px;border:0;background:none;color:#fff;font:700 .82rem system-ui;cursor:pointer;padding:0}
+/* MAIN */
+.main{flex:1;padding:36px clamp(18px,4vw,56px)}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;gap:12px;flex-wrap:wrap}
+.top-bar h1{font-size:1.6rem;font-weight:800}
+.eyebrow{font-size:.68rem;letter-spacing:.12em;color:#df2336;font-weight:800;margin-bottom:5px}
+/* TABS */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px}
+.tab{border:1.5px solid #dde3ed;background:#fff;color:#10233e;border-radius:8px;padding:8px 16px;font:600 .83rem system-ui;cursor:pointer}
+.tab.active{background:#10233e;color:#fff;border-color:#10233e}
+.tab-panel{display:none}.tab-panel.active{display:block}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.stat-card{background:#fff;border-radius:10px;padding:18px 20px;border:1.5px solid #dde3ed}
+.stat-card .n{font-size:2rem;font-weight:800;color:#df2336}
+.stat-card .l{font-size:.78rem;color:#64748b;margin-top:3px}
+/* TABLE */
+.tbl-wrap{background:#fff;border-radius:12px;border:1.5px solid #dde3ed;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead{background:#f8fafc}
+th{padding:11px 14px;text-align:left;font-weight:700;color:#10233e;border-bottom:1.5px solid #dde3ed;white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:#f8fafc}
+.badge{display:inline-block;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:700}
+.badge-red{background:#fef2f2;color:#dc2626}
+.badge-green{background:#f0fdf4;color:#15803d}
+.badge-blue{background:#eff6ff;color:#1d4ed8}
+.badge-gray{background:#f1f5f9;color:#475569}
+.badge-orange{background:#fff7ed;color:#c2410c}
+/* ACTION BUTTONS */
+.btn-approve{background:#15803d;color:#fff;border:0;border-radius:6px;padding:5px 12px;font:700 .78rem system-ui;cursor:pointer;margin-right:4px}
+.btn-reject{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:5px 12px;font:700 .78rem system-ui;cursor:pointer}
+.btn-approve:hover{background:#166534}.btn-reject:hover{background:#b91c1c}
+/* PROFILE DROPDOWN */
+.profile-btn{background:#1e3a5f;border:0;color:#fff;border-radius:50%;width:36px;height:36px;font:700 .9rem system-ui;cursor:pointer;flex-shrink:0}
+.profile-drop{position:absolute;right:0;top:44px;background:#fff;border:1.5px solid #dde3ed;border-radius:10px;padding:14px;min-width:220px;box-shadow:0 8px 24px rgba(16,35,62,.15);z-index:50;display:none}
+.profile-drop.open{display:block}
+.profile-wrap{position:relative}
+.profile-name{font-weight:700;font-size:.9rem;color:#10233e}
+.profile-email{font-size:.78rem;color:#64748b;margin-top:2px}
+.profile-roles{margin-top:8px;display:flex;gap:5px;flex-wrap:wrap}
+.profile-role{background:#10233e;color:#fff;border-radius:12px;padding:2px 9px;font-size:.7rem;font-weight:700}
+/* MSG */
+.msg-bar{position:fixed;right:22px;bottom:22px;z-index:99;max-width:400px;padding:12px 16px;border-radius:9px;font-size:.85rem;box-shadow:0 6px 20px rgba(16,35,62,.2);display:none}
+.msg-bar.ok{display:block;background:#ecfdf3;color:#166534}
+.msg-bar.err{display:block;background:#fef2f2;color:#b91c1c}
+@media(max-width:700px){.stats-row{grid-template-columns:1fr 1fr}.sidebar{width:100%;min-height:0;position:static}.main{padding:20px 14px}body{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a class="sidebar-brand" href="/portal.html">SafeLink <span>Admin panel</span></a>
+  <nav style="display:grid;gap:4px">
+    <button class="nav-item active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="nav-item" onclick="switchTab('users')">👥 All users</button>
+    <button class="nav-item" onclick="switchTab('applications')">📋 Role applications</button>
+    <button class="nav-item" onclick="switchTab('emergencies')">🆘 Emergencies</button>
+    <button class="nav-item" onclick="switchTab('relief')">🏠 Relief requests</button>
+    <button class="nav-item" onclick="switchTab('blood')">🩸 Blood requests</button>
+    <button class="nav-item" onclick="switchTab('donations')">💛 Donations</button>
+    <button class="nav-item" onclick="switchTab('shelters')">🏕️ Shelters</button>
+    <a class="nav-item" href="/portal.html">← Back to portal</a>
+  </nav>
+  <div class="sidebar-footer">
+    <span id="admin-name">Loading…</span>
+    <button onclick="doLogout()">Sign out</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="top-bar">
+    <div><p class="eyebrow">SAFELINK ADMINISTRATION</p><h1 id="panel-title">Dashboard</h1></div>
+    <div class="profile-wrap">
+      <button class="profile-btn" id="profileBtn" onclick="toggleProfile()">A</button>
+      <div class="profile-drop" id="profileDrop">
+        <div class="profile-name" id="pd-name">—</div>
+        <div class="profile-email" id="pd-email">—</div>
+        <div class="profile-roles" id="pd-roles"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="tab-panel active" id="tab-dashboard">
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="n" id="s-users">—</div><div class="l">Total users</div></div>
+      <div class="stat-card"><div class="n" id="s-em">—</div><div class="l">Emergencies</div></div>
+      <div class="stat-card"><div class="n" id="s-apps">—</div><div class="l">Pending applications</div></div>
+      <div class="stat-card"><div class="n" id="s-shelters">—</div><div class="l">Active shelters</div></div>
+    </div>
+    <p style="color:#64748b;font-size:.85rem">Select a section from the sidebar to manage records.</p>
+  </div>
+
+  <!-- USERS -->
+  <div class="tab-panel" id="tab-users">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Verified</th><th>Enabled</th><th>Joined</th></tr></thead>
+      <tbody id="users-body"><tr><td colspan="6" style="color:#94a3b8;padding:20px">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="tab-panel" id="tab-applications">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Application ID</th><th>Applicant</th><th>Role</th><th>Organisation</th><th>Documents</th><th>Status</th><th>Applied</th><th>Actions</th></tr></thead>
+      <tbody id="apps-body"><tr><td colspan="8" style="color:#94a3b8;padding:20px">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- EMERGENCIES -->
+  <div class="tab-panel" id="tab-emergencies">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Type</th><th>Status</th><th>Description</th><th>Location</th><th>Reported</th></tr></thead>
+      <tbody id="em-body"><tr><td colspan="6" style="color:#94a3b8;padding:20px">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- RELIEF -->
+  <div class="tab-panel" id="tab-relief">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Type</th><th>People</th><th>Description</th><th>Status</th><th>Submitted</th></tr></thead>
+      <tbody id="relief-body"><tr><td colspan="5" style="color:#94a3b8;padding:20px">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- BLOOD -->
+  <div class="tab-panel" id="tab-blood">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Blood group</th><th>Units</th><th>Hospital</th><th>Contact note</th><th>Status</th><th>Requested</th></tr></thead>
+      <tbody id="blood-body"><tr><td colspan="6" style="color:#94a3b8;padding:20px">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- DONATIONS -->
+  <div class="tab-panel" id="tab-donations">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Type</th><th>Amount</th><th>Description</th><th>Status</th><th>Pledged</th></tr></thead>
+      <tbody id="donations-body"><tr><td colspan="5" style="color:#94a3b8;padding:20px">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- SHELTERS -->
+  <div class="tab-panel" id="tab-shelters">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Name</th><th>Address</th><th>Capacity</th><th>Available</th><th>Status</th></tr></thead>
+      <tbody id="shelters-body"><tr><td colspan="5" style="color:#94a3b8;padding:20px">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div class="msg-bar" id="msgBar"></div>
+
+<script>
+const titles = {dashboard:'Dashboard',users:'All users',applications:'Role applications',emergencies:'All emergencies',relief:'Relief requests',blood:'Blood requests',donations:'Donations',shelters:'Shelters'};
+let currentTab = 'dashboard';
+let meData = null;
+
+function showMsg(t, err){ const b=document.querySelector('#msgBar'); b.textContent=t; b.className='msg-bar '+(err?'err':'ok'); setTimeout(()=>b.className='msg-bar',4000); }
+function badge(text, color){ return `<span class="badge badge-${color}">${text}</span>`; }
+function statusBadge(s){ const m={PENDING:'orange',OPEN:'red',ACTIVE:'blue',RESOLVED:'green',APPROVED:'green',REJECTED:'red',AVAILABLE:'green',UNAVAILABLE:'gray'}; return badge(s, m[s]||'gray'); }
+function shortId(id){ return id ? id.substring(0,8)+'…' : '—'; }
+function fmtDate(d){ return d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelector('#tab-'+tab).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b=>{ if(b.textContent.toLowerCase().includes(titles[tab]?.toLowerCase().split(' ')[0]||tab)) b.classList.add('active'); });
+  document.querySelector('#panel-title').textContent = titles[tab]||tab;
+  currentTab = tab;
+  loaders[tab]?.();
+}
+
+const loaders = {
+  dashboard: loadDashboard,
+  users: loadUsers,
+  applications: loadApplications,
+  emergencies: loadEmergencies,
+  relief: loadRelief,
+  blood: loadBlood,
+  donations: loadDonations,
+  shelters: loadShelters
+};
+
+async function loadDashboard(){
+  const [uRes, eRes, aRes, sRes] = await Promise.allSettled([
+    fetch('/api/v1/admin/accounts'), fetch('/api/v1/emergencies?size=1'), fetch('/api/v1/role-applications/pending'), fetch('/api/v1/shelters')
+  ]);
+  if(uRes.status==='fulfilled'&&uRes.value.ok){ const d=await uRes.value.json(); document.querySelector('#s-users').textContent=Array.isArray(d)?d.length:(d.totalElements||d.length||'—'); }
+  if(eRes.status==='fulfilled'&&eRes.value.ok){ const d=await eRes.value.json(); document.querySelector('#s-em').textContent=d.totalElements??'—'; }
+  if(aRes.status==='fulfilled'&&aRes.value.ok){ const d=await aRes.value.json(); document.querySelector('#s-apps').textContent=Array.isArray(d)?d.length:'—'; }
+  if(sRes.status==='fulfilled'&&sRes.value.ok){ const d=await sRes.value.json(); document.querySelector('#s-shelters').textContent=Array.isArray(d)?d.length:'—'; }
+}
+
+async function loadUsers(){
+  const tbody = document.querySelector('#users-body');
+  try{
+    const r = await fetch('/api/v1/admin/accounts');
+    if(!r.ok) throw new Error(`Could not load applications (HTTP ${r.status}).`);
+    const data = await r.json();
+    const list = Array.isArray(data) ? data : (data.content||[]);
+    tbody.innerHTML = list.length ? list.map(u=>`<tr>
+      <td><b>${u.name||u.fullName||'—'}</b></td>
+      <td>${u.email}</td>
+      <td>${(u.roles||[]).map(r=>badge(r,'blue')).join(' ')}</td>
+      <td>${u.emailVerified&&u.phoneVerified?badge('Yes','green'):badge('No','orange')}</td>
+      <td>${u.enabled!==false?badge('Yes','green'):badge('No','red')}</td>
+      <td>${fmtDate(u.createdAt)}</td>
+    </tr>`).join('') : '<tr><td colspan="6" style="color:#94a3b8;padding:20px">No users found.</td></tr>';
+  }catch{ tbody.innerHTML='<tr><td colspan="6" style="color:#dc2626;padding:20px">Failed to load users. Check admin API.</td></tr>'; }
+}
+
+async function loadApplications(){
+  const tbody = document.querySelector('#apps-body');
+  try{
+    const r = await fetch('/api/v1/role-applications/pending');
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    tbody.innerHTML = data.length ? data.map(a=>`<tr>
+      <td style="font-family:monospace;font-size:.72rem;word-break:break-all">${a.id}</td>
+      <td><b>${a.applicantName||'—'}</b></td>
+      <td>${badge(a.requestedRole||'—','blue')}</td>
+      <td>${a.organisationName||'—'}</td>
+      <td>${a.documentCount}/${['CITIZEN','DONOR'].includes(a.requestedRole) ? 1 : 2}</td>
+      <td>${statusBadge(a.reviewStatus||'PENDING')}</td>
+      <td>${fmtDate(a.submittedAt)}</td>
+      <td>
+        <button class="btn-approve" ${a.documentCount < (['CITIZEN','DONOR'].includes(a.requestedRole) ? 1 : 2) ? 'disabled title="Required documents are missing"' : ''} onclick="reviewApp('${a.id}',true)">Approve</button>
+        <button class="btn-reject" onclick="reviewApp('${a.id}',false)">Reject</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="8" style="color:#94a3b8;padding:20px">No pending applications.</td></tr>';
+  }catch(error){ tbody.innerHTML=`<tr><td colspan="8" style="color:#dc2626;padding:20px">${error.message}</td></tr>`; }
+}
+
+async function reviewApp(id, approved){
+  try{
+    const r = await fetch(`/api/v1/role-applications/${id}/review`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({approved,notes:''}) });
+    if(!r.ok) { const body=await r.json().catch(()=>({})); throw new Error(body.detail||'Review could not be completed.'); }
+    showMsg(`Application ${approved ? 'approved' : 'rejected'} successfully.`);
+    loadApplications();
+  }catch(error){ showMsg(error.message, true); }
+}
+
+async function loadEmergencies(){
+  const tbody = document.querySelector('#em-body');
+  try{
+    const r = await fetch('/api/v1/emergencies?size=100');
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    const list = Array.isArray(data) ? data : (data.content||[]);
+    tbody.innerHTML = list.length ? list.map(e=>`<tr>
+      <td style="font-family:monospace;font-size:.75rem">${shortId(e.id)}</td>
+      <td>${badge(e.type,'red')}</td>
+      <td>${statusBadge(e.status||'OPEN')}</td>
+      <td style="max-width:200px">${e.description||'—'}</td>
+      <td style="font-size:.78rem">${e.latitude?e.latitude.toFixed(4)+', '+e.longitude.toFixed(4):'—'}</td>
+      <td>${fmtDate(e.createdAt)}</td>
+    </tr>`).join('') : '<tr><td colspan="6" style="color:#94a3b8;padding:20px">No emergencies recorded.</td></tr>';
+  }catch{ tbody.innerHTML='<tr><td colspan="6" style="color:#dc2626;padding:20px">Failed to load emergencies.</td></tr>'; }
+}
+
+async function loadRelief(){
+  const tbody = document.querySelector('#relief-body');
+  try{
+    const r = await fetch('/api/v1/relief-requests');
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    const list = Array.isArray(data) ? data : (data.content||[]);
+    tbody.innerHTML = list.length ? list.map(x=>`<tr>
+      <td>${badge(x.requestType,'orange')}</td>
+      <td>${x.peopleCount||1}</td>
+      <td style="max-width:200px">${x.description||'—'}</td>
+      <td>${statusBadge(x.status||'PENDING')}</td>
+      <td>${fmtDate(x.createdAt)}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="color:#94a3b8;padding:20px">No relief requests.</td></tr>';
+  }catch{ tbody.innerHTML='<tr><td colspan="5" style="color:#dc2626;padding:20px">Failed to load relief requests.</td></tr>'; }
+}
+
+async function loadBlood(){
+  const tbody = document.querySelector('#blood-body');
+  try{
+    const r = await fetch('/api/v1/blood-requests');
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    const list = Array.isArray(data) ? data : (data.content||[]);
+    tbody.innerHTML = list.length ? list.map(x=>`<tr>
+      <td>${badge(x.bloodGroup,'red')}</td>
+      <td>${x.unitsRequired||1}</td>
+      <td>${x.hospitalName||'—'}</td>
+      <td style="max-width:180px">${x.contactNote||'—'}</td>
+      <td>${statusBadge(x.status||'OPEN')}</td>
+      <td>${fmtDate(x.createdAt)}</td>
+    </tr>`).join('') : '<tr><td colspan="6" style="color:#94a3b8;padding:20px">No blood requests.</td></tr>';
+  }catch{ tbody.innerHTML='<tr><td colspan="6" style="color:#dc2626;padding:20px">Failed to load blood requests.</td></tr>'; }
+}
+
+async function loadDonations(){
+  const tbody = document.querySelector('#donations-body');
+  try{
+    const r = await fetch('/api/v1/donations');
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    const list = Array.isArray(data) ? data : (data.content||[]);
+    tbody.innerHTML = list.length ? list.map(x=>`<tr>
+      <td>${badge(x.donationType,'green')}</td>
+      <td>${x.amount?x.currency+' '+x.amount:'—'}</td>
+      <td style="max-width:200px">${x.itemDescription||'—'}</td>
+      <td>${statusBadge(x.status||'PENDING')}</td>
+      <td>${fmtDate(x.createdAt)}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="color:#94a3b8;padding:20px">No donations.</td></tr>';
+  }catch{ tbody.innerHTML='<tr><td colspan="5" style="color:#dc2626;padding:20px">Failed to load donations.</td></tr>'; }
+}
+
+async function loadShelters(){
+  const tbody = document.querySelector('#shelters-body');
+  try{
+    const r = await fetch('/api/v1/shelters');
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    tbody.innerHTML = data.length ? data.map(s=>`<tr>
+      <td><b>${s.name}</b></td>
+      <td>${s.addressLine||'—'}</td>
+      <td>${s.capacityTotal||'—'}</td>
+      <td>${s.capacityAvailable??'—'}</td>
+      <td>${statusBadge(s.status||'OPEN')}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="color:#94a3b8;padding:20px">No shelters added.</td></tr>';
+  }catch{ tbody.innerHTML='<tr><td colspan="5" style="color:#dc2626;padding:20px">Failed to load shelters.</td></tr>'; }
+}
+
+function toggleProfile(){
+  document.querySelector('#profileDrop').classList.toggle('open');
+}
+document.addEventListener('click', e=>{ if(!e.target.closest('.profile-wrap')) document.querySelector('#profileDrop').classList.remove('open'); });
+
+async function doLogout(){ await fetch('/logout',{method:'POST'}).catch(()=>{}); window.location.href='/login.html?logout=true'; }
+
+// Load profile
+fetch('/api/v1/account/me').then(r=>r.ok?r.json():Promise.reject())
+  .then(me=>{
+    meData = me;
+    const init = (me.fullName||'A')[0].toUpperCase();
+    document.querySelector('#profileBtn').textContent = init;
+    document.querySelector('#admin-name').textContent = me.fullName;
+    document.querySelector('#pd-name').textContent = me.fullName;
+    document.querySelector('#pd-email').textContent = me.email;
+    document.querySelector('#pd-roles').innerHTML = (me.roles||[]).map(r=>`<span class="profile-role">${r}</span>`).join('');
+    loadDashboard();
+  })
+  .catch(()=>{ window.location.href='/login.html'; });
+</script>
+</body>
+</html>

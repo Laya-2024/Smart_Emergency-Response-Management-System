@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SafeLink — Emergency Response</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="/">SafeLink</a>
+  <a href="#services">Services</a>
+  <a href="/register.html">Register</a>
+  <a href="/login.html" class="btn-header" id="nav-signin">Sign in</a>
+  <a href="/portal.html" class="btn-header" id="nav-portal" style="display:none">My Portal</a>
+</header>
+
+<!-- HERO -->
+<section class="hero-section">
+  <div class="hero-inner">
+    <div>
+      <p class="hero-tag">24/7 Emergency Response</p>
+      <h1 class="hero-title">Help is one tap<br><span>away from you.</span></h1>
+      <p class="hero-desc">Connect your emergency instantly with police, doctors, fire services and trained volunteers — with your live location.</p>
+      <a class="btn-sos" id="sos" href="/login.html">🆘 SIGN IN TO SEND SOS</a>
+      <p id="sos-result"></p>
+    </div>
+    <div class="em-grid">
+      <div class="em-card sos-card">
+        <div class="em-icon">🆘</div>
+        <div class="em-title">SOS Alert</div>
+        <div class="em-sub">One-tap emergency</div>
+      </div>
+      <div class="em-card fire-card">
+        <div class="em-icon">🚒</div>
+        <div class="em-title">Fire & Rescue</div>
+        <div class="em-sub">Rapid response</div>
+      </div>
+      <div class="em-card women-card">
+        <div class="em-icon">🛡️</div>
+        <div class="em-title">Women Safety</div>
+        <div class="em-sub">Discreet SOS</div>
+      </div>
+      <div class="em-card med-card">
+        <div class="em-icon">🏥</div>
+        <div class="em-title">Medical Aid</div>
+        <div class="em-sub">Doctor dispatch</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOTLINES -->
+<div class="contacts-bar">
+  <div class="contact-item"><strong>112</strong> National Emergency</div>
+  <div class="contact-item"><strong>101</strong> Fire Services</div>
+  <div class="contact-item"><strong>108</strong> Ambulance</div>
+  <div class="contact-item"><strong>100</strong> Police</div>
+  <div class="contact-item"><strong>1091</strong> Women Helpline</div>
+</div>
+
+<!-- SERVICES -->
+<section class="modules-section" id="services">
+  <h2>Our Services</h2>
+  <div class="modules-grid">
+    <div class="mod-card">
+      <div class="mod-icon">🆘</div>
+      <h3>Personal Safety & SOS</h3>
+      <p>One-tap SOS with live GPS location. Trusted contacts get notified instantly.</p>
+      <a href="/register.html">Create citizen account →</a>
+    </div>
+    <div class="mod-card">
+      <div class="mod-icon">🛡️</div>
+      <h3>Women Safety</h3>
+      <p>Discreet emergency alerts, safe-route check-ins and nearest responder dispatch.</p>
+      <a href="/register.html">Register now →</a>
+    </div>
+    <div class="mod-card">
+      <div class="mod-icon">🚒</div>
+      <h3>Fire & Accidents</h3>
+      <p>Rapid incident routing to fire stations and paramedics with exact location.</p>
+      <a href="/register.html">Create an account →</a>
+    </div>
+    <div class="mod-card">
+      <div class="mod-icon">🏥</div>
+      <h3>Medical Emergency</h3>
+      <p>Connect with nearest doctors and ambulance services in real time.</p>
+      <a href="/register.html">Create an account →</a>
+    </div>
+    <div class="mod-card">
+      <div class="mod-icon">🌊</div>
+      <h3>Disaster Relief</h3>
+      <p>Flood, tsunami, shelter coordination and verified aid distribution.</p>
+      <a href="/register.html">Create an account →</a>
+    </div>
+    <div class="mod-card">
+      <div class="mod-icon">🤝</div>
+      <h3>Volunteer & Donate</h3>
+      <p>Join as a volunteer responder or support relief operations as a donor.</p>
+      <a href="/register.html">Get involved →</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">SafeLink is a coordination platform. Always call 112 for immediate danger.</footer>
+
+<script>
+  // Show portal link if logged in
+  fetch('/api/v1/account/me').then(r => {
+    if (r.ok) {
+      document.querySelector('#nav-signin').style.display = 'none';
+      document.querySelector('#nav-portal').style.display = '';
+    }
+  }).catch(() => {});
+
+  // SOS
+  document.querySelector('#sos').addEventListener('click', () => {
+    const btn = document.querySelector('#sos');
+    const res = document.querySelector('#sos-result');
+    if (!navigator.geolocation) { res.textContent = 'Location unavailable. Call 112 immediately.'; return; }
+    btn.disabled = true; res.textContent = 'Getting your location…';
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const r = await fetch('/api/v1/emergencies', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': crypto.randomUUID(),
+            'X-Device-Id': localStorage.deviceId || (localStorage.deviceId = crypto.randomUUID())
+          },
+          body: JSON.stringify({ type: 'SOS', latitude: coords.latitude, longitude: coords.longitude, description: 'SOS from SafeLink web app' })
+        });
+        res.style.color = r.ok ? '#4ade80' : '#f87171';
+        res.textContent = r.ok ? '✅ SOS sent! Responders are being notified.' : '⚠️ Failed. Call 112 now.';
+      } catch { res.style.color = '#f87171'; res.textContent = '⚠️ Network error. Call 112 immediately.'; }
+      finally { setTimeout(() => btn.disabled = false, 10000); }
+    }, () => { res.style.color = '#f87171'; res.textContent = '⚠️ Location denied. Call 112 immediately.'; btn.disabled = false; },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+  });
+</script>
+</body>
+</html>

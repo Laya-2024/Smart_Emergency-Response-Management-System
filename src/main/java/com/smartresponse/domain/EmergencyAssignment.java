@@ -1,0 +1,3 @@
+package com.smartresponse.domain;
+import jakarta.persistence.*; import java.time.Instant; import java.util.UUID;
+@Entity @Table(name="emergency_assignments") public class EmergencyAssignment {@Id @GeneratedValue private UUID id;@ManyToOne(optional=false) @JoinColumn(name="emergency_id") private Emergency emergency;@ManyToOne(optional=false) @JoinColumn(name="responder_id") private ResponderProfile responder;private String assignmentStatus="ACCEPTED";private Instant assignedAt=Instant.now();private Instant acceptedAt=Instant.now();@Version private long version;protected EmergencyAssignment(){}public EmergencyAssignment(Emergency e,ResponderProfile r){emergency=e;responder=r;}public UUID getId(){return id;}}

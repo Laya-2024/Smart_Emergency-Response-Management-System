@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Smart Emergency Response Management System</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="workspace-body">
+  <aside class="sidebar">
+    <a class="sidebar-brand" href="/">Smart Emergency Response <span>Management System</span></a>
+    <nav id="workspace-nav" aria-label="Dashboard sections">
+      <button class="nav-item active" data-section="overview">Overview</button>
+      <button class="nav-item" data-section="sos">Send SOS</button>
+      <button class="nav-item" data-section="women">Women safety</button>
+      <button class="nav-item" data-section="fire">Fire & accident</button>
+      <button class="nav-item" data-section="shelter">Shelters & relief</button>
+      <button class="nav-item" data-section="blood">Blood request</button>
+      <button class="nav-item" data-section="donation">Donation</button>
+      <button class="nav-item" data-section="alerts" id="alerts-nav">Responder alerts</button>
+      <button class="nav-item" data-section="myrequests">My requests</button>
+      <button class="nav-item" data-section="feedback">Feedback</button>
+      <a class="nav-item link-item" href="/apply-role.html">Verification documents</a>
+      <a class="nav-item link-item" href="/profile.html">My profile</a>
+      <a class="nav-item link-item admin-only" href="/admin.html" style="display:none">Administration</a>
+    </nav>
+    <div class="sidebar-footer"><span id="account-name">Loading…</span><button id="logout-btn">Sign out</button></div>
+  </aside>
+
+  <main class="workspace-main">
+    <header class="workspace-header">
+      <div><p class="eyebrow">SMART EMERGENCY RESPONSE MANAGEMENT SYSTEM</p><h1 id="page-title">Welcome</h1></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <a href="/" class="home-link">Public home</a>
+        <button id="alerts-button" data-open="alerts" type="button" aria-label="Open emergency alerts" style="position:relative;background:#fff;border:2px solid #df2336;color:#10233e;border-radius:50%;width:38px;height:38px;font-size:1.05rem;cursor:pointer">🔔<span id="alerts-badge" hidden style="position:absolute;top:-8px;right:-8px;min-width:18px;height:18px;padding:0 4px;border-radius:10px;background:#df2336;color:#fff;font:700 .7rem system-ui;line-height:18px"></span></button>
+        <div style="position:relative">
+          <button id="profileBtn" onclick="toggleProfile()" style="background:#fff;border:2px solid #df2336;color:#10233e;border-radius:50%;width:38px;height:38px;font:700 .95rem system-ui;cursor:pointer">?</button>
+          <div id="profileDrop" style="display:none;position:absolute;right:0;top:46px;background:#fff;border:1.5px solid #dde3ed;border-radius:10px;padding:16px;min-width:230px;box-shadow:0 8px 24px rgba(16,35,62,.15);z-index:50">
+            <div id="pd-name" style="font-weight:800;font-size:.95rem;color:#10233e">—</div>
+            <div id="pd-email" style="font-size:.78rem;color:#64748b;margin-top:2px">—</div>
+            <div id="pd-roles" style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap"></div>
+            <hr style="margin:10px 0;border:0;border-top:1px solid #f1f5f9">
+            <button onclick="document.querySelector('[data-section=myrequests]').click()" style="background:none;border:0;color:#10233e;font:600 .83rem system-ui;cursor:pointer;padding:0">📋 My requests</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="workspace-section active" id="overview">
+      <div class="welcome-card"><div><p class="eyebrow">READY WHEN YOU NEED HELP</p><h2>One place for urgent help and community support.</h2><p>Send an SOS, request relief, find shelters, give blood requests, donate, or manage responder alerts.</p></div><button class="primary-action" data-open="sos">Send emergency SOS</button></div>
+      <div class="feature-grid">
+        <button data-open="women"><span>🛡️</span><b>Women safety</b><small>Private location-based alert</small></button>
+        <button data-open="fire"><span>🚒</span><b>Fire & accident</b><small>Rapid emergency dispatch</small></button>
+        <button data-open="shelter"><span>🏠</span><b>Shelters & relief</b><small>Find safe places and support</small></button>
+        <button data-open="blood"><span>🩸</span><b>Blood request</b><small>Ask community coordinators</small></button>
+      </div>
+    </section>
+
+    <section class="workspace-section" id="sos"><h2>Send an SOS</h2><p class="section-intro">Your live location is shared only with eligible nearby responders. For immediate danger, also call 112.</p><form class="action-form emergency-form" data-type="SOS"><label>What happened?<textarea name="description" maxlength="1000" placeholder="Briefly describe the emergency"></textarea></label><button class="primary-action">Send SOS now</button></form></section>
+    <section class="workspace-section" id="women"><h2>Women safety alert</h2><p class="section-intro">A discreet alert routed to nearby verified police and dispatch responders.</p><form class="action-form emergency-form" data-type="WOMEN_SAFETY"><label>Optional note<textarea name="description" maxlength="1000" placeholder="Describe the risk or assistance you need"></textarea></label><button class="primary-action">Send safety alert</button></form></section>
+    <section class="workspace-section" id="fire"><h2>Fire & accident</h2><p class="section-intro">Choose the incident type and send your current location.</p><form class="action-form emergency-form"><label>Incident type<select name="type"><option value="FIRE">Fire and rescue</option><option value="ACCIDENT">Road accident</option><option value="MEDICAL">Medical emergency</option></select></label><label>Details<textarea name="description" maxlength="1000" placeholder="People affected, hazards, landmarks"></textarea></label><button class="primary-action">Request emergency response</button></form></section>
+
+    <section class="workspace-section" id="shelter"><h2>Find a shelter or request support</h2><div id="shelter-list" class="data-list">Loading shelters…</div><form class="action-form relief-form"><h3>Request food, water, shelter or rescue</h3><label>Need<select name="requestType"><option>FOOD</option><option>WATER</option><option>SHELTER</option><option>RESCUE</option></select></label><label>People affected<input name="peopleCount" type="number" min="1" value="1" required></label><label>Details<textarea name="description" maxlength="1000"></textarea></label><button class="primary-action">Submit relief request</button></form></section>
+    <section class="workspace-section" id="blood"><h2>Blood request</h2><p class="section-intro">Your request is recorded in the blood-request register for relief coordinators.</p><form class="action-form blood-form"><label>Blood group<select name="bloodGroup"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label><label>Units needed<input name="unitsRequired" type="number" min="1" max="20" value="1" required></label><label>Hospital name<input name="hospitalName" maxlength="180" required></label><label>Contact instructions<textarea name="contactNote" maxlength="1000" required></textarea></label><button class="primary-action">Submit blood request</button></form></section>
+    <section class="workspace-section" id="donation"><h2>Make a donation pledge</h2><p class="section-intro">Pledge money, food, clothes, blood-donation support, or other items for verified relief operations.</p><form class="action-form donation-form"><label>Donation type<select name="donationType"><option value="MONEY">Money</option><option value="FOOD">Food</option><option value="CLOTHES">Clothes</option><option value="MEDICAL">Medical supplies</option><option value="BLOOD_SUPPORT">Blood donation support</option><option value="OTHER">Other</option></select></label><label>Amount (only for money)<input name="amount" type="number" min="0.01" step="0.01"></label><label>Currency<input name="currency" value="INR" maxlength="3"></label><label>Item details<textarea name="itemDescription" maxlength="1000" placeholder="What would you like to donate?"></textarea></label><button class="primary-action">Record donation pledge</button></form></section>
+
+    <section class="workspace-section" id="alerts"><h2>Emergency alerts</h2><p class="section-intro">Approved responder accounts receive eligible emergency alerts automatically. Alerts sent while you are away remain available here after you sign in.</p><div id="alert-list" class="data-list">Loading alert history…</div></section>
+    <section class="workspace-section" id="myrequests"><h2>My requests</h2><p class="section-intro">All emergencies, relief, blood requests and donations you have submitted.</p>
+      <div style="display:grid;gap:18px">
+        <div><h3 style="font-size:.95rem;font-weight:700;margin-bottom:10px;color:#10233e">🆘 My emergencies</h3><div id="my-em-list" class="data-list">Loading…</div></div>
+        <div><h3 style="font-size:.95rem;font-weight:700;margin-bottom:10px;color:#10233e">🏠 My relief requests</h3><div id="my-relief-list" class="data-list">Loading…</div></div>
+        <div><h3 style="font-size:.95rem;font-weight:700;margin-bottom:10px;color:#10233e">🩸 My blood requests</h3><div id="my-blood-list" class="data-list">Loading…</div></div>
+        <div><h3 style="font-size:.95rem;font-weight:700;margin-bottom:10px;color:#10233e">💛 My donations</h3><div id="my-donation-list" class="data-list">Loading…</div></div>
+      </div>
+    </section>
+    <section class="workspace-section" id="feedback"><h2>Share feedback</h2><p class="section-intro">Choose one of your resolved emergencies. A manual ID is not needed.</p><form class="action-form feedback-form"><label>Resolved emergency<select name="emergencyId" id="feedback-emergency" required><option value="">Loading resolved emergencies…</option></select></label><label>Rating<select name="rating"><option value="5">5 — Excellent</option><option value="4">4 — Good</option><option value="3">3 — Average</option><option value="2">2 — Poor</option><option value="1">1 — Very poor</option></select></label><label>Comments<textarea name="comments" maxlength="1000"></textarea></label><button class="primary-action">Submit feedback</button></form></section>
+    <p id="workspace-message" class="workspace-message" role="status"></p>
+    <div id="responder-location-update" class="workspace-message" hidden></div>
+  </main>
+  <script src="/js/portal.js"></script>
+</body>
+</html>

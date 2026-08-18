@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Responder dashboard — SafeLink</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">SafeLink</a>
+    <a href="/portal.html">My portal</a>
+    <span id="user-name" style="color:#94a3b8;font-size:.85rem;margin-right:auto;margin-left:12px"></span>
+    <a href="#" id="logout-btn" class="btn-header">Sign out</a>
+  </header>
+
+  <div class="page-wrap">
+    <div class="page-header">
+      <h1>Responder Console</h1>
+    </div>
+
+    <div class="dash-grid">
+      <div class="dash-card">
+        <h3>📍 Your availability</h3>
+        <select class="status-select" id="availability">
+          <option value="OFFLINE">🔴 Offline</option>
+          <option value="AVAILABLE">🟢 Available</option>
+          <option value="BUSY">🟡 Busy</option>
+        </select>
+        <p id="loc-status" style="font-size:.8rem;color:var(--gray);margin:8px 0">Getting your location…</p>
+        <button class="btn-primary" id="save-status" style="margin-top:4px">Update status</button>
+        <div class="msg" id="status-msg"></div>
+      </div>
+
+      <div class="dash-card">
+        <h3>🚨 Live emergency alerts</h3>
+        <p id="alerts-empty" style="color:var(--gray);font-size:.85rem">Waiting for alerts near your location…</p>
+        <div id="alerts-list"></div>
+      </div>
+
+      <div class="dash-card">
+        <h3>📋 Accepted incidents</h3>
+        <p id="inc-empty" style="color:var(--gray);font-size:.85rem">No incidents accepted yet.</p>
+        <div id="inc-list"></div>
+      </div>
+
+      <div class="dash-card">
+        <h3>⚡ Quick actions</h3>
+        <div style="display:grid;gap:10px">
+          <a href="/portal.html" style="text-decoration:none"><button class="btn-primary" style="background:var(--navy)">← Back to portal</button></a>
+          <a href="/apply-role.html" style="text-decoration:none"><button class="btn-primary" style="background:var(--navy)">Upload documents</button></a>
+          <a href="/feedback.html" style="text-decoration:none"><button class="btn-primary">Give feedback</button></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">SafeLink — Emergency coordination platform</footer>
+
+  <script>
+    let myLat = null, myLng = null;
+
+    fetch('/api/v1/account/me')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(a => { document.querySelector('#user-name').textContent = a.fullName + ' · ' + a.roles.join(', '); })
+      .catch(() => location.href = '/login.html');
+
+    document.querySelector('#logout-btn').addEventListener('click', async e => {
+      e.preventDefault();
+      await fetch('/logout', { method: 'POST' }).catch(() => {});
+      location.href = '/login.html?logout=true';
+    });
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(({ coords }) => {
+        myLat = coords.latitude; myLng = coords.longitude;
+        document.querySelector('#loc-status').textContent = `📍 ${myLat.toFixed(4)}, ${myLng.toFixed(4)}`;
+      }, () => { document.querySelector('#loc-status').textContent = '⚠️ Location unavailable — enable GPS.'; });
+    }
+
+    document.querySelector('#save-status').addEventListener('click', async () => {
+      const el = document.querySelector('#status-msg');
+      try {
+        const availability = document.querySelector('#availability').value;
+        if (availability === 'AVAILABLE' && (myLat === null || myLng === null)) throw new Error('Enable location before becoming available.');
+        const response = await fetch('/api/v1/responders/me/status', { method:'PUT', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ availabilityStatus: availability, latitude: myLat, longitude: myLng }) });
+        if (!response.ok) throw new Error('Status update failed');
+        el.className = 'msg ok'; el.textContent = '✅ Status updated.';
+      } catch (error) { el.className = 'msg err'; el.textContent = error.message || 'Failed to update status.'; }
+    });
+
+    // SSE alerts
+    const alertsList = document.querySelector('#alerts-list');
+    const alertsEmpty = document.querySelector('#alerts-empty');
+    // Alerts are stored server-side as well as sent over SSE, so a responder
+    // still sees an SOS that arrived before this page was opened.
+    fetch('/api/v1/alerts').then(r => r.ok ? r.json() : []).then(alerts => alerts.forEach(a => {
+      alertsEmpty.style.display = 'none';
+      const card = document.createElement('div'); card.className = 'alert-item';
+      card.innerHTML = `<div class="alert-type">🚨 ${a.type}</div><div class="alert-loc">📍 ${a.latitude?.toFixed(4) ?? '?'}, ${a.longitude?.toFixed(4) ?? '?'}</div><div style="font-size:.8rem;color:var(--gray);margin-top:3px"></div><button class="btn-accept" data-id="${a.emergencyId}">Accept &amp; respond</button>`;
+      card.querySelector('div[style]').textContent = a.description || 'A nearby emergency needs response.';
+      card.querySelector('.btn-accept').addEventListener('click', async function() { this.disabled = true; const r = await fetch(`/api/v1/emergencies/${a.emergencyId}/accept`, {method:'POST'}); this.textContent = r.ok ? '✅ Accepted' : 'Unable to accept'; if (!r.ok) this.disabled = false; });
+      alertsList.append(card);
+    }));
+    try {
+      const es = new EventSource('/api/v1/alerts/stream');
+      es.addEventListener('emergency-alert', e => {
+        try {
+          const a = JSON.parse(e.data);
+          if ('Notification' in window && Notification.permission === 'granted') new Notification(`SafeLink: ${a.type}`, { body: a.description || 'A new request needs attention.' });
+          alertsEmpty.style.display = 'none';
+          const card = document.createElement('div');
+          card.className = 'alert-item';
+          card.innerHTML = `<div class="alert-type">🚨 ${a.type}</div>
+            <div class="alert-loc">📍 ${a.latitude?.toFixed(4) ?? '?'}, ${a.longitude?.toFixed(4) ?? '?'}</div>
+            <div style="font-size:.8rem;color:var(--gray);margin-top:3px">${a.description||''}</div>
+            ${a.actionable === false ? '' : `<button class="btn-accept" data-id="${a.emergencyId}">Accept &amp; respond</button>`}`;
+          alertsList.prepend(card);
+          card.querySelector('.btn-accept')?.addEventListener('click', async function() {
+            this.disabled = true; this.textContent = 'Accepting…';
+            try {
+              await fetch(`/api/v1/emergencies/${a.emergencyId}/accept`, { method:'POST' });
+              this.textContent = '✅ Accepted';
+              this.style.background = '#15803d';
+              document.querySelector('#inc-empty').style.display = 'none';
+              document.querySelector('#inc-list').insertAdjacentHTML('beforeend',
+                `<div class="alert-item" style="border-color:var(--navy)"><div class="alert-type" style="color:var(--navy)">✅ ${a.type}</div><div class="alert-loc">📍 ${a.latitude?.toFixed(4)??'?'}, ${a.longitude?.toFixed(4)??'?'}</div></div>`);
+            } catch { this.disabled = false; this.textContent = 'Accept & respond'; }
+          });
+        } catch {}
+      });
+    } catch {}
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  </script>
+</body>
+</html>

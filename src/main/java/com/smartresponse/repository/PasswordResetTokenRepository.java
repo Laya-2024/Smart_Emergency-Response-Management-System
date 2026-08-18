@@ -1,0 +1,3 @@
+package com.smartresponse.repository;
+import com.smartresponse.domain.PasswordResetToken; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, UUID> { Optional<PasswordResetToken> findByTokenHash(String tokenHash); }

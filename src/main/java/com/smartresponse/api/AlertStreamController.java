@@ -1,0 +1,7 @@
+package com.smartresponse.api;
+import com.smartresponse.service.RealtimeAlertHub; import com.smartresponse.repository.*; import org.springframework.http.MediaType; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*; import org.springframework.web.servlet.mvc.method.annotation.SseEmitter; import java.util.*;
+@RestController @RequestMapping("/api/v1/alerts") public class AlertStreamController {
+ private final RealtimeAlertHub hub; private final UserRepository users; private final AlertDeliveryRepository deliveries; private final EmergencyAssignmentRepository assignments; public AlertStreamController(RealtimeAlertHub hub,UserRepository users,AlertDeliveryRepository deliveries,EmergencyAssignmentRepository assignments){this.hub=hub;this.users=users;this.deliveries=deliveries;this.assignments=assignments;}
+ @GetMapping public List<AlertResponse> alerts(Authentication auth){UUID userId=users.findByEmailIgnoreCase(auth.getName()).orElseThrow().getId();return deliveries.findByRecipient_IdAndEmergency_ReporterIdNotOrderByCreatedAtDesc(userId,userId).stream().map(d->{var e=d.getEmergency();return new AlertResponse(e.getId(),e.getType(),e.getLatitude(),e.getLongitude(),e.getDescription(),d.getCreatedAt(),e.getStatus(),assignments.existsByEmergencyIdAndResponder_User_Id(e.getId(),userId));}).toList();}
+ @GetMapping(value="/stream",produces=MediaType.TEXT_EVENT_STREAM_VALUE) public SseEmitter stream(Authentication auth){return hub.connect(users.findByEmailIgnoreCase(auth.getName()).orElseThrow().getId());}
+}

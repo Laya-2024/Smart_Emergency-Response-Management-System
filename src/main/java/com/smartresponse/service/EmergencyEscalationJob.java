@@ -1,0 +1,3 @@
+package com.smartresponse.service;
+import com.smartresponse.domain.*; import com.smartresponse.repository.EmergencyRepository; import org.springframework.scheduling.annotation.Scheduled; import org.springframework.stereotype.Component; import java.time.*;
+@Component public class EmergencyEscalationJob {private final EmergencyRepository emergencies;private final AlertRoutingService routing;public EmergencyEscalationJob(EmergencyRepository e,AlertRoutingService r){emergencies=e;routing=r;}@Scheduled(fixedDelay=60000) public void escalate(){for(Emergency e:emergencies.findByStatusAndCreatedAtBefore(EmergencyStatus.OPEN,Instant.now().minusSeconds(60)))routing.route(e,15);}}

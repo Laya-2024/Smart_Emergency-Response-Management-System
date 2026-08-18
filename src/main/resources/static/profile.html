@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My profile - SafeLink</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="account">
+  <main class="card">
+    <a class="brand" href="/portal.html">SafeLink</a>
+    <h1>My profile</h1>
+    <p id="profile">Loading...</p>
+
+    <h2>Trusted contacts</h2>
+    <p>Trusted contacts receive an email for every SOS, safety, fire, accident, or medical alert you send, including your live coordinates and a map link.</p>
+    <div id="contacts" class="data-list">Loading contacts...</div>
+    <form id="contact-form">
+      <label>Name<input name="contactName" maxlength="100" required></label>
+      <label>Phone number<input name="phone" inputmode="tel" placeholder="+919876543210" pattern="\+?[0-9]{10,15}" required></label>
+      <label>Email address for alerts<input name="email" type="email" maxlength="254" required></label>
+      <label>Relationship<input name="relationshipName" maxlength="60" placeholder="Parent, friend, neighbour"></label>
+      <button class="sos">Add trusted contact</button>
+    </form>
+
+    <h2 style="margin-top:28px">Change password</h2>
+    <form id="password-form">
+      <label>Current password<input name="currentPassword" type="password" required></label>
+      <label>New password (at least 8 characters)<input name="newPassword" type="password" minlength="8" required></label>
+      <button class="sos">Change password</button>
+    </form>
+    <p id="message"></p>
+  </main>
+  <script>
+    const message = document.querySelector('#message');
+    const showMessage = text => { message.textContent = text; };
+    async function errorText(response) { const body = await response.json().catch(() => ({})); return body.detail || 'The request could not be completed.'; }
+
+    async function loadContacts() {
+      const list = document.querySelector('#contacts');
+      try {
+        const response = await fetch('/api/v1/trusted-contacts');
+        if (!response.ok) throw new Error();
+        const contacts = await response.json();
+        list.innerHTML = '';
+        if (!contacts.length) { list.textContent = 'No trusted contacts added yet.'; return; }
+        contacts.forEach(contact => {
+          const card = document.createElement('article');
+          card.className = 'data-card';
+          const name = document.createElement('b'); name.textContent = contact.contactName;
+          const relationship = document.createElement('small'); relationship.textContent = contact.relationshipName || 'Trusted contact';
+          const remove = document.createElement('button'); remove.className = 'secondary-action'; remove.type = 'button'; remove.textContent = 'Remove';
+          remove.addEventListener('click', async () => {
+            if (!confirm(`Remove ${contact.contactName} from trusted contacts?`)) return;
+            const result = await fetch(`/api/v1/trusted-contacts/${contact.id}`, { method: 'DELETE' });
+            if (!result.ok) { showMessage(await errorText(result)); return; }
+            showMessage('Trusted contact removed.'); loadContacts();
+          });
+          card.append(name, relationship, remove); list.append(card);
+        });
+      } catch { list.textContent = 'Unable to load trusted contacts.'; }
+    }
+
+    fetch('/api/v1/account/me').then(r => r.ok ? r.json() : Promise.reject()).then(a => {
+      document.querySelector('#profile').textContent = `${a.fullName} | ${a.email} | ${a.roles.join(', ')}`;
+    }).catch(() => location.href = '/login.html');
+    loadContacts();
+
+    document.querySelector('#contact-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const response = await fetch('/api/v1/trusted-contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(form)) });
+      if (!response.ok) { showMessage(await errorText(response)); return; }
+      event.target.reset(); showMessage('Trusted contact added securely.'); loadContacts();
+    });
+    document.querySelector('#password-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const data = new FormData(event.target);
+      const response = await fetch('/api/v1/account/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword: data.get('currentPassword'), newPassword: data.get('newPassword') }) });
+      if (!response.ok) { showMessage(await errorText(response)); return; }
+      showMessage('Password changed successfully.'); event.target.reset();
+    });
+  </script>
+</body>
+</html>

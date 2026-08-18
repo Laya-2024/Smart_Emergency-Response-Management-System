@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verify account — SafeLink</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.left{background:#10233e;color:#fff;display:flex;flex-direction:column;justify-content:center;padding:48px 40px;gap:20px}
+.left a.brand{color:#fff;font-weight:800;font-size:1.3rem;text-decoration:none}
+.left h2{font-size:1.8rem;font-weight:800;line-height:1.2}
+.left p{color:#94a3b8;font-size:.9rem;line-height:1.6}
+.steps{display:grid;gap:16px;margin-top:8px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.step-n{background:#df2336;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0}
+.step-t{font-size:.86rem;color:#94a3b8;line-height:1.5;padding-top:4px}
+.right{background:#f5f7fa;display:flex;align-items:center;justify-content:center;padding:28px 20px}
+.box{width:min(100%,420px);background:#fff;border-radius:14px;padding:32px;box-shadow:0 4px 24px rgba(16,35,62,.1)}
+.box h1{font-size:1.4rem;font-weight:800;color:#10233e;margin-bottom:4px}
+.box .sub{color:#64748b;font-size:.83rem;margin-bottom:18px;line-height:1.5}
+form{display:grid;gap:11px}
+label{display:grid;gap:4px;font-size:.8rem;font-weight:700;color:#10233e}
+input{border:1.5px solid #dde3ed;border-radius:7px;padding:10px 11px;font:inherit;font-size:.87rem;width:100%;color:#10233e}
+input:focus{outline:none;border-color:#10233e}
+.btn{background:#df2336;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:800;font-size:.9rem;cursor:pointer;width:100%}
+.btn:hover{background:#c0202f}
+.btn:disabled{background:#94a3b8;cursor:not-allowed}
+.msg{margin-top:10px;font-size:.83rem;padding:9px 11px;border-radius:7px;display:none;line-height:1.5}
+.msg.err{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;display:block}
+.msg.ok{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;display:block}
+.msg a{color:inherit;font-weight:700}
+.links{margin-top:14px;font-size:.82rem;color:#64748b;text-align:center;display:grid;gap:5px}
+.links a{color:#10233e;font-weight:700;text-decoration:none}
+@media(max-width:768px){body{grid-template-columns:1fr}.left{display:none}}
+</style>
+</head>
+<body>
+<div class="left">
+  <a class="brand" href="/">SafeLink</a>
+  <h2>Two-step verification.</h2>
+  <p>We verify your email and mobile to keep your account secure.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-t">Register with your email, phone and password.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-t">Enter the 6-digit codes sent to your email and mobile.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-t">Sign in and access your role-based dashboard.</div></div>
+  </div>
+</div>
+<div class="right">
+  <div class="box">
+    <h1>Verify your account</h1>
+    <p class="sub">Enter the 6-digit codes sent to your email and mobile number.</p>
+    <form onsubmit="return false">
+      <label>Email address <input id="vEmail" type="email" required placeholder="you@example.com"></label>
+      <label>📧 Email verification code <input id="vEcode" inputmode="numeric" maxlength="6" required placeholder="6-digit code"></label>
+      <label>📱 Mobile OTP <input id="vPcode" inputmode="numeric" maxlength="6" required placeholder="6-digit code"></label>
+      <button class="btn" id="vBtn" type="button" onclick="doVerify()">Verify &amp; activate account</button>
+    </form>
+    <div class="msg" id="vMsg"></div>
+    <div class="links">
+      <span>Already verified? <a href="/login.html">Sign in</a></span>
+      <span>Need an account? <a href="/register.html">Register</a></span>
+    </div>
+  </div>
+</div>
+<script>
+// Pre-fill from sessionStorage or URL
+const params = new URLSearchParams(location.search);
+const em = params.get('email') || sessionStorage.getItem('ve') || '';
+if(em) document.querySelector('#vEmail').value = em;
+const eo = sessionStorage.getItem('eo'); if(eo) document.querySelector('#vEcode').value = eo;
+const po = sessionStorage.getItem('po'); if(po) document.querySelector('#vPcode').value = po;
+
+function showMsg(text, isErr){
+  const el = document.querySelector('#vMsg');
+  el.className = 'msg ' + (isErr ? 'err' : 'ok');
+  el.innerHTML = text;
+}
+
+async function doVerify(){
+  const btn = document.querySelector('#vBtn');
+  const email = document.querySelector('#vEmail').value.trim();
+  const eCode = document.querySelector('#vEcode').value.trim();
+  const pCode = document.querySelector('#vPcode').value.trim();
+  if(!email||!eCode||!pCode){ showMsg('Please fill all fields.', true); return; }
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  try {
+    let r = await fetch('/api/v1/auth/verify/email', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, code: eCode})
+    });
+    if(!r.ok){ const d=await r.json().catch(()=>({})); throw new Error(d.detail||'Invalid email code.'); }
+
+    r = await fetch('/api/v1/auth/verify/phone', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, code: pCode})
+    });
+    if(!r.ok){ const d=await r.json().catch(()=>({})); throw new Error(d.detail||'Invalid phone code.'); }
+
+    sessionStorage.removeItem('ve'); sessionStorage.removeItem('eo'); sessionStorage.removeItem('po');
+    showMsg('✅ Account verified! <a href="/login.html">Sign in now →</a>');
+  } catch(err){ showMsg(err.message, true); }
+  finally{ btn.disabled=false; btn.textContent='Verify & activate account'; }
+}
+</script>
+</body>
+</html>

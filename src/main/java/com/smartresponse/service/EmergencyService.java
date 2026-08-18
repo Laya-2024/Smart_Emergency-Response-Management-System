@@ -1,0 +1,20 @@
+package com.smartresponse.service;
+import com.smartresponse.api.*; import com.smartresponse.domain.*; import com.smartresponse.repository.EmergencyRepository; import com.smartresponse.repository.EmergencyAssignmentRepository; import com.smartresponse.repository.UserRepository; import com.smartresponse.repository.ResponderProfileRepository;
+import org.springframework.data.domain.*; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
+@Service
+public class EmergencyService {
+ private final EmergencyRepository repository; private final AlertRoutingService routing; private final TrustedContactService trustedContacts; private final EmergencyAssignmentRepository assignments; private final UserRepository users; private final RealtimeAlertHub hub; private final ResponderProfileRepository responders;
+ public EmergencyService(EmergencyRepository repository, AlertRoutingService routing, TrustedContactService trustedContacts, EmergencyAssignmentRepository assignments, UserRepository users, RealtimeAlertHub hub, ResponderProfileRepository responders) { this.repository = repository; this.routing = routing; this.trustedContacts=trustedContacts; this.assignments=assignments; this.users=users; this.hub=hub; this.responders=responders; }
+  @Transactional
+  public EmergencyResponse create(UUID reporterId, String key, EmergencyRequest request) {
+    if (key == null || key.isBlank() || key.length() > 80) throw new IllegalArgumentException("A valid Idempotency-Key is required");
+    boolean existing=repository.findByIdempotencyKey(key).isPresent(); Emergency saved = repository.findByIdempotencyKey(key).orElseGet(() -> repository.save(new Emergency(request.type(), reporterId, key, request.latitude(), request.longitude(), request.description()))); if(!existing) { routing.route(saved); trustedContacts.notifyEmergency(reporterId,saved); }
+    return map(saved);
+  }
+  @Transactional(readOnly=true) public Page<EmergencyResponse> list(EmergencyStatus status, Pageable page) { return (status == null ? repository.findAll(page) : repository.findByStatus(status, page)).map(this::map); }
+  @Transactional public EmergencyResponse acknowledge(UUID id) { Emergency emergency=repository.findById(id).orElseThrow(() -> new NoSuchElementException("Emergency not found")); emergency.acknowledge(); return map(emergency); }
+  @Transactional public EmergencyResponse resolve(UUID id, UUID requester) { Emergency emergency=repository.findById(id).orElseThrow(() -> new NoSuchElementException("Emergency not found")); if(!emergency.getReporterId().equals(requester) && !assignments.existsByEmergencyIdAndResponder_User_Id(id,requester)) throw new SecurityException("Only the person who reported or accepted this emergency can resolve it"); emergency.resolve(); String resolverName=users.findById(requester).map(AppUser::getFullName).orElse("Your responder"); Map<String,Object> update=new HashMap<>(); update.put("eventType","EMERGENCY_STATUS"); update.put("emergencyId",id); update.put("status",EmergencyStatus.RESOLVED.name()); update.put("responderName",resolverName); responders.findByUserId(requester).ifPresent(profile->{update.put("responderLatitude",profile.getLatitude());update.put("responderLongitude",profile.getLongitude());}); update.put("message","Your emergency has been resolved. You can now share feedback about the help you received."); hub.send(emergency.getReporterId(), update); return map(emergency); }
+  @Transactional public EmergencyResponse cancel(UUID id, UUID requester) { Emergency emergency=repository.findById(id).orElseThrow(() -> new NoSuchElementException("Emergency not found")); if(!emergency.getReporterId().equals(requester)) throw new SecurityException("Only the reporter can cancel this emergency"); emergency.cancel(); return map(emergency); }
+  private EmergencyResponse map(Emergency e) { return new EmergencyResponse(e.getId(),e.getType(),e.getStatus(),e.getLatitude(),e.getLongitude(),e.getCreatedAt()); }
+}

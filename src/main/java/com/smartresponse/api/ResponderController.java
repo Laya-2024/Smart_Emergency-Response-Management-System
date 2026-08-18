@@ -1,0 +1,3 @@
+package com.smartresponse.api;
+import com.smartresponse.service.ResponderService; import jakarta.validation.Valid; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1/responders/me") public class ResponderController {private final ResponderService service;public ResponderController(ResponderService s){service=s;}@GetMapping public ResponderStatusResponse mine(Authentication a){return service.mine(a.getName());}@PutMapping("/status") public ResponderStatusResponse update(Authentication a,@Valid @RequestBody ResponderStatusRequest r){return service.update(a.getName(),r);}}

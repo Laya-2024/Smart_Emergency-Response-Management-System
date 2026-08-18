@@ -1,0 +1,9 @@
+package com.smartresponse.api;
+import com.smartresponse.api.RoleApplicationSummary; import com.smartresponse.service.RoleApplicationService; import jakarta.validation.Valid; import org.springframework.http.*; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*; import java.util.*;
+@RestController @RequestMapping("/api/v1/role-applications") public class RoleApplicationController {
+ private final RoleApplicationService service; private final com.smartresponse.repository.VerificationDocumentRepository documents; public RoleApplicationController(RoleApplicationService s,com.smartresponse.repository.VerificationDocumentRepository d){service=s;documents=d;}
+ @PostMapping public ResponseEntity<Map<String,UUID>> submit(Authentication a,@Valid @RequestBody RoleApplicationRequest r){return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("applicationId",service.submit(a.getName(),r)));}
+ @GetMapping("/mine") public ResponseEntity<Map<String,Object>> mine(Authentication a){return service.mine(a.getName()).map(app->{Map<String,Object> result=new LinkedHashMap<>();result.put("applicationId",app.getId());result.put("requestedRole",app.getRequestedRole());result.put("reviewStatus",app.getReviewStatus());result.put("documentCount",documents.countByApplicationId(app.getId()));return ResponseEntity.ok(result);}).orElseGet(()->ResponseEntity.noContent().build());}
+ @GetMapping("/pending") public List<RoleApplicationSummary> pending(){return service.pending().stream().map(x->new RoleApplicationSummary(x.getId(),x.getUser().getFullName(),x.getRequestedRole(),x.getOrganisationName(),x.getReviewStatus(),documents.countByApplicationId(x.getId()),x.getSubmittedAt())).toList();}
+ @PatchMapping("/{id}/review") public ResponseEntity<Void> review(Authentication a,@PathVariable UUID id,@Valid @RequestBody ReviewRequest r){service.review(a.getName(),id,r);return ResponseEntity.noContent().build();}
+}

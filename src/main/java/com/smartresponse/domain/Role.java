@@ -1,0 +1,2 @@
+package com.smartresponse.domain;
+public enum Role { CITIZEN, VOLUNTEER, POLICE, DOCTOR, FIRE, PARAMEDIC, SHELTER_MANAGER, NGO, DONOR, ADMIN, DISPATCHER }

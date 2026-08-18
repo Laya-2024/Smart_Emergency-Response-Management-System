@@ -1,0 +1,1 @@
+package com.smartresponse.repository; import com.smartresponse.domain.Donation; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface DonationRepository extends JpaRepository<Donation,UUID>{List<Donation> findByDonationStatusOrderByCreatedAtDesc(String status);List<Donation> findByReporterIdOrderByCreatedAtDesc(UUID reporterId);}

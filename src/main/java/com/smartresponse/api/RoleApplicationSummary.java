@@ -1,0 +1,1 @@
+package com.smartresponse.api; import com.smartresponse.domain.Role; import java.time.Instant; import java.util.UUID; public record RoleApplicationSummary(UUID id,String applicantName,Role requestedRole,String organisationName,String reviewStatus,long documentCount,Instant submittedAt){}

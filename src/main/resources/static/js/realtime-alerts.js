@@ -1,0 +1,4 @@
+// Works after a responder signs in. The Spring server pushes alerts to each authenticated browser.
+if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+const alerts = new EventSource('/api/v1/alerts/stream');
+alerts.addEventListener('emergency-alert', async event => { const alert = JSON.parse(event.data); if('Notification' in window && Notification.permission==='granted') new Notification('SafeLink emergency alert',{body:`${alert.type}: verified emergency nearby`}); if(window.confirm(`Emergency alert: ${alert.type}. Accept this response?`)){const r=await fetch(`/api/v1/emergencies/${alert.emergencyId}/accept`,{method:'POST'});window.alert(r.ok?'Response accepted. Update the incident timeline as you help.':'This emergency could not be accepted.');} });
